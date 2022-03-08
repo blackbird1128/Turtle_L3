@@ -10,10 +10,14 @@
 %option warn 8bit nodefault noyywrap
 
 DIGIT [0-9]
+INT {DIGIT}+
+DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
+
 
 %%
 
-{DIGIT}+              { yylval.value = strtod(yytext, NULL); return VALUE; }
+{INT}+                { yylval.value = strtod(yytext, NULL); return VALUE; }
+{DOUBLE}              { yylval.value = strtod(yytext, NULL); return VALUE; }
 "print"               {return CMD_PRINT;}
 "up"                  {return KW_UP;}
 "down"                {return KW_DOWN;}
@@ -46,10 +50,6 @@ DIGIT [0-9]
 "lt"                  {return KW_LEFT;}
 "heading"             {return KW_HEADING;}
 "ht"                  {return KW_HEADING;}
-
-
-
-
 
 
 
