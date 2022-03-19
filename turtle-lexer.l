@@ -5,6 +5,8 @@
 
 #include "turtle-ast.h"
 #include "turtle-parser.h"
+
+
 %}
 
 %option warn 8bit nodefault noyywrap
@@ -21,6 +23,7 @@ DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
 "print"               {return CMD_PRINT;}
 "up"                  {return KW_UP;}
 "down"                {return KW_DOWN;}
+"home"                {return KW_HOME;}
 "red"                 {return RED;}
 "green"               {return GREEN;}
 "blue"                {return BLUE;}

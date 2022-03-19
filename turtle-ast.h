@@ -17,7 +17,6 @@ enum ast_cmd {
   CMD_HOME,
   CMD_COLOR,
   CMD_PRINT,
-
 };
 
 // internal functions
@@ -87,8 +86,6 @@ struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd);
 struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node *right);
 
 
-
-
 // root of the abstract syntax tree
 struct ast {
   struct ast_node *unit;
@@ -96,6 +93,7 @@ struct ast {
 
 // do not forget to destroy properly! no leaks allowed!
 void ast_destroy(struct ast *self);
+static void ast_destroy_node(struct ast_node *node);
 
 // the execution context
 struct context {
@@ -113,6 +111,7 @@ void context_create(struct context *self);
 
 // print the tree as if it was a Turtle program
 void ast_print(const struct ast *self);
+static void ast_print_node(const struct ast_node *node);
 
 // evaluate the tree and generate some basic primitives
 void ast_eval(const struct ast *self, struct context *ctx);
