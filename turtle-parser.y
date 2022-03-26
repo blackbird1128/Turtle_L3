@@ -41,6 +41,9 @@ void yyerror(struct ast *ret, const char *);
 %token           '/'           DIV
 %token           '^'           POW
 
+%token          '('           LPAREN
+%token          ')'           RPAREN
+
 
 %token           FCT_SIN       "sin"
 %token           FCT_COS       "cos"

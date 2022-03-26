@@ -104,6 +104,7 @@ void ast_print_node(struct ast_node *node);
 
 
 
+
 // root of the abstract syntax tree
 struct ast {
   struct ast_node *unit;
@@ -131,5 +132,16 @@ void ast_print(const struct ast *self);
 
 // evaluate the tree and generate some basic primitives
 void ast_eval(const struct ast *self, struct context *ctx);
+
+
+
+void ast_eval_node(struct ast_node *node, struct context *ctx);
+void ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
+void ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
+void ast_eval_cmd_block(struct ast_node *node, struct context *ctx);
+void ast_eval_binop(struct ast_node *node, struct context *ctx);
+void ast_eval_unop(struct ast_node *node, struct context *ctx);
+void ast_eval_func(struct ast_node *node, struct context *ctx);
+
 
 #endif /* TURTLE_AST_H */

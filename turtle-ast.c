@@ -188,10 +188,6 @@ void ast_destroy(struct ast *self) {
  */
 
 void context_create(struct context *self) {
-  self->x = 0;
-  self->y = 0;
-  self->angle = 0;
-  self->up = true;
 
 }
 
@@ -199,7 +195,95 @@ void context_create(struct context *self) {
  * eval
  */
 
+void ast_eval_node(struct ast_node *node, struct context *ctx) {
+  switch (node->kind) {
+  case KIND_CMD_SIMPLE:
+    ast_eval_cmd_simple(node, ctx);
+    break;
+  case KIND_CMD_REPEAT:
+    ast_eval_cmd_repeat(node, ctx);
+    break;
+  case KIND_CMD_BLOCK:
+    ast_eval_cmd_block(node, ctx);
+    break;
+  case KIND_EXPR_BINOP:
+    ast_eval_binop(node, ctx);
+    break;
+  case KIND_EXPR_UNOP:
+    ast_eval_unop(node, ctx);
+    break;
+  case KIND_EXPR_FUNC:
+    ast_eval_func(node, ctx);
+    break;
+  default:
+    break;
+  }
+}
+
+void ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
+  switch (node->u.cmd) {
+  case CMD_UP:
+    break;
+  case CMD_DOWN:
+
+    break;
+  case CMD_LEFT:
+
+    break;
+  case CMD_RIGHT:
+    break;
+  case CMD_HOME:
+    ctx->x = 0;
+    ctx->y = 0;
+    break;
+  case CMD_HEADING:
+    break;
+  case CMD_POSITION:
+    ctx->x = node->children[0]->u.value;
+    ctx->y = node->children[1]->u.value;
+    break;
+  case CMD_COLOR:
+    break;
+  case CMD_PRINT:
+    break;
+  }
+}
+
+void ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
+  int i;
+  for (i = 0; i < node->children[0]->u.value; i++) {
+    ast_eval_node(node->children[1], ctx);
+  }
+}
+
+void ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
+  int i;
+  for (i = 0; i < node->children_count; i++) {
+    ast_eval_node(node->children[i], ctx);
+  }
+}
+
+void ast_eval_binop(struct ast_node *node, struct context *ctx) {
+  switch (node->u.op) {
+  case '+':
+    node->u.value = node->children[0]->u.value + node->children[1]->u.value;
+    break;
+  case '-':
+    node->u.value = node->children[0]->u.value - node->children[1]->u.value;
+    break;
+  case '*':
+    node->u.value = node->children[0]->u.value * node->children[1]->u.value;
+    break;
+  case '/':
+    node->u.value = node->children[0]->u.value / node->children[1]->u.value;
+    break;
+  }
+}
+
+
+
 void ast_eval(const struct ast *self, struct context *ctx) {
+
 
 }
 
