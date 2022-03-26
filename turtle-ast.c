@@ -117,7 +117,7 @@ struct ast_node *make_cmd_print(struct ast_node *expr)
   return node;
 }
 
-struct ast_node *make_command_repeat(struct ast_node *expr, struct ast_node *cmd){
+struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd){
   struct ast_node *node = calloc(1, sizeof(struct ast_node));
   node->kind = KIND_CMD_REPEAT;
   node->children_count = 2;
@@ -125,6 +125,15 @@ struct ast_node *make_command_repeat(struct ast_node *expr, struct ast_node *cmd
   node->children[1] = cmd;
   return node;
 }
+
+struct ast_node *make_cmd_block(struct ast_node *cmds){
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_CMD_BLOCK;
+  node->children_count = 1;
+  node->children[0] = cmds;
+  return node;
+}
+
 
 struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node *right)
 {
@@ -137,6 +146,39 @@ struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node
   return node;
 }
 
+struct ast_node *make_expr_unop(char op, struct ast_node *expr)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_EXPR_UNOP;
+  node->u.op = op;
+  node->children_count = 1;
+  node->children[0] = expr;
+  return node;
+}
+
+struct ast_node *make_expr_func(enum ast_func func, struct ast_node *expr)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_EXPR_FUNC;
+  node->u.func = func;
+  node->children_count = 1;
+  node->children[0] = expr;
+  return node;
+}
+
+struct ast_node *make_expr_func_rdm(struct ast_node *expr1, struct ast_node *expr2)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_EXPR_FUNC;
+  node->u.func = FUNC_RANDOM;
+  node->children_count = 2;
+  node->children[0] = expr1;
+  node->children[1] = expr2;
+  return node;
+}
+
+
+
 void ast_destroy(struct ast *self) {
 
 }
@@ -146,6 +188,10 @@ void ast_destroy(struct ast *self) {
  */
 
 void context_create(struct context *self) {
+  self->x = 0;
+  self->y = 0;
+  self->angle = 0;
+  self->up = true;
 
 }
 
@@ -161,6 +207,123 @@ void ast_eval(const struct ast *self, struct context *ctx) {
  * print
  */
 
-void ast_print(const struct ast *self) {
+
+
+char* func_to_string(enum ast_func func)
+{
+  switch(func)
+  {
+
+    case FUNC_SIN:
+      return "sin";
+    case FUNC_COS:
+      return "cos";
+    case FUNC_TAN:
+      return "tan";
+    case FUNC_SQRT:
+      return "sqrt";
+    case FUNC_RANDOM:
+      return "random";
+    default:
+      return "unknown function";
+  }
 
 }
+
+
+
+char*  cmd_to_string(enum ast_cmd cmd) {
+  switch (cmd) {
+    case CMD_FORWARD:
+      return "forward";
+    case CMD_BACKWARD:
+      return "backward";
+    case CMD_LEFT:
+      return "left";
+    case CMD_RIGHT:
+      return "right";
+    case CMD_UP:
+      return "up";
+    case CMD_DOWN:
+      return "down";
+    case CMD_HEADING:
+      return "heading";
+    case CMD_POSITION:
+      return "position";
+    case CMD_HOME:
+      return "home";
+    case CMD_COLOR:
+      return "color";
+    case CMD_PRINT:
+      return "print";
+    default:
+      return "unknown";
+  }
+}
+
+
+
+void ast_print_node(struct ast_node *node)
+{
+  if (node == NULL) {
+    return;
+  }
+  switch (node->kind) {
+    
+    case KIND_CMD_SIMPLE:
+      printf("%s ", cmd_to_string(node->u.cmd));
+      print_childrens(node);
+      break;
+    case KIND_CMD_REPEAT:
+      printf("repeat ");
+      ast_print_node(node->children[0]);
+      printf(" ");
+      ast_print_node(node->children[1]);
+      break;
+    case KIND_EXPR_BINOP:
+      ast_print_node(node->children[0]);
+      printf(" %c ", node->u.op);
+      ast_print_node(node->children[1]);
+      break;
+    case KIND_EXPR_UNOP:
+      printf("%c ", node->u.op);
+      print_childrens(node);
+      break;
+    case KIND_EXPR_FUNC:
+      printf("%s(", func_to_string(node->u.func));
+      print_childrens(node);
+      printf(")");
+      break;
+    case KIND_EXPR_VALUE:
+      printf("%f", node->u.value);
+      break;  
+    case KIND_EXPR_NAME:
+      printf("%s", node->u.name);
+      break;
+    case KIND_CMD_BLOCK:
+      printf("{\n\n");
+      print_childrens(node);
+      printf("}");
+      break;
+    default:
+      break;
+  }
+  printf("\n");
+  ast_print_node(node->next);
+
+}
+
+
+void print_childrens(struct ast_node *node) {
+  for (int i = 0; i < node->children_count; i++) {
+    ast_print_node(node->children[i]);
+  }
+}
+
+
+
+
+void ast_print(const struct ast *self) {
+    ast_print_node(self->unit);
+  }
+

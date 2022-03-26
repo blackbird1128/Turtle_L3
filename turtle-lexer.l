@@ -12,6 +12,8 @@
 DIGIT [0-9]
 INT {DIGIT}+
 DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
+LEFT_BRACKET "{"
+RIGHT_BRACKET "}"
 
 
 %%
@@ -38,6 +40,7 @@ DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
 
 
 
+
 "forward"             {return KW_FORWARD;}
 "fw"                  {return KW_FORWARD;}
 "backward"            {return KW_BACKWARD;}
@@ -50,6 +53,19 @@ DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
 "lt"                  {return KW_LEFT;}
 "heading"             {return KW_HEADING;}
 "ht"                  {return KW_HEADING;}
+"color"               {return KW_COLOR;}
+"home"                {return KW_HOME;}
+"repeat"              {return KW_REPEAT;}
+
+"+"                  {return '+';}
+"-"                  {return '-';}
+"*"                  {return '*';}
+"/"                  {return '/';}
+"^"                  {return '^';}
+
+
+{LEFT_BRACKET}                  {return '{';}
+{RIGHT_BRACKET}                 {return '}';}
 
 
 

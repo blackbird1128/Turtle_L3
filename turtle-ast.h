@@ -83,8 +83,23 @@ struct ast_node *make_cmd_color(struct ast_node *expr);
 struct ast_node *make_cmd_print(struct ast_node *expr);
 
 struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd);
+struct ast_node *make_cmd_block(struct ast_node *cmds);
 
 struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node *right);
+struct ast_node *make_expr_unop(char op, struct ast_node *expr);
+
+struct ast_node *make_expr_func(enum ast_func func, struct ast_node *expr);
+struct ast_node *make_expr_func_rdm(struct ast_node *expr1 , struct ast_node *expr2);
+
+
+
+
+void print_childrens(struct ast_node *node);
+
+
+char* func_to_string(enum ast_func func);
+char* cmd_to_string(enum ast_cmd cmd);
+void ast_print_node(struct ast_node *node);
 
 
 

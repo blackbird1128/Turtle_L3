@@ -35,6 +35,13 @@ void yyerror(struct ast *ret, const char *);
 %token            GREY         "grey"
 %token            WHITE        "white"
 
+%token           '+'           PLUS
+%token           '-'           MINUS
+%token           '*'           MULT
+%token           '/'           DIV
+%token           '^'           POW
+
+
 %token           FCT_SIN       "sin"
 %token           FCT_COS       "cos"
 %token           FCT_TAN       "tan"
@@ -75,7 +82,7 @@ unit:
 ;
 
 cmds:
-    cmd cmds          { $1->next = $2; $$ = $1; }
+    cmd cmds          { $$->next = $2; $$ = $1; }
   | /* empty */       { $$ = NULL; }
 ;
 
@@ -86,19 +93,19 @@ param:
 
 
 cmd:
-    KW_FORWARD param   { $$ = make_cmd_forward($1); }
-  |  KW_BACKWARD param  { $$ = make_cmd_backward($1); }
-  |  KW_RIGHT param     { $$ = make_cmd_right($1); }
-  |  KW_LEFT param      { $$ = make_cmd_left($1); }
-  |  KW_PRINT param     { $$ = make_cmd_print($1); }
-  |  KW_HEADING param   { $$ = make_cmd_heading($1); }
-  |  KW_UP param        { $$ = make_cmd_up($1); }
-  |  KW_DOWN param      { $$ = make_cmd_down($1); }
-  |  KW_COLOR param     { $$ = make_cmd_color($1); }
-  |  KW_POSITION param param { $$ = make_cmd_position($1, $2); }
+     KW_FORWARD param   { $$ = make_cmd_forward($2); }
+  |  KW_BACKWARD param  { $$ = make_cmd_backward($2); }
+  |  KW_RIGHT param     { $$ = make_cmd_right($2); }
+  |  KW_LEFT param      { $$ = make_cmd_left($2); }
+  |  KW_PRINT param     { $$ = make_cmd_print($2); }
+  |  KW_HEADING param   { $$ = make_cmd_heading($2); }
+  |  KW_UP param        { $$ = make_cmd_up($2); }
+  |  KW_DOWN param      { $$ = make_cmd_down($2); }
+  |  KW_COLOR param     { $$ = make_cmd_color($2); }
+  |  KW_POSITION param param { $$ = make_cmd_position($2, $3); }
   |  KW_HOME      { $$ = make_cmd_home(); }
-  |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($1, $2); } 
-  | '{' cmds '}'       { }
+  |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($2, $3); } 
+  | '{' cmds '}'       { $$ = make_cmd_block($2); }
 ;
 
 
@@ -118,18 +125,18 @@ color:
 expr:
     VALUE             { $$ = make_expr_value($1); }
   |  '-' VALUE %prec UNARY_MINUS { /* TODO */ }
-  |  expr '+' expr     { $$ = make_expr_binop($2, $1 , $3); }
-  |  expr '-' expr     { $$ = make_expr_binop($2, $1 , $3); }
-  |  expr '^' expr     { $$ = make_expr_binop($2, $1 , $3); }
-  |  expr '*' expr     { $$ = make_expr_binop($2, $1 , $3); }
-  |  expr '/' expr     { $$ = make_expr_binop($2, $1 , $3); }
-  |  FCT_SIN '(' expr ')'         { /* TODO */ }
-  |  FCT_COS '(' expr ')'         { /* TODO */ }
-  |  FCT_TAN '(' expr ')'         { /* TODO */ }
-  |  FCT_SQRT '(' expr ')'        { /* TODO */ }
-  |  FCT_RANDOM '(' expr ',' expr ')'      { $$ = 0; }
-  |  '(' expr ')' { /* TODO */ }
-  |  '-' '(' expr ')' { /* TODO */ }
+  |  expr '+' expr     { $$ = make_expr_binop('+', $1 , $3); }
+  |  expr '-' expr     { $$ = make_expr_binop('-', $1 , $3); }
+  |  expr '*' expr     { $$ = make_expr_binop('*', $1 , $3); }
+  |  expr '/' expr     { $$ = make_expr_binop('/', $1 , $3); }
+  |  expr '^' expr     { $$ = make_expr_binop('^', $1 , $3); }
+  |  FCT_SIN '(' expr ')'         { $$ = make_expr_func(FCT_SIN, $3); }
+  |  FCT_COS '(' expr ')'         { $$ = make_expr_func(FCT_COS, $3); }
+  |  FCT_TAN '(' expr ')'         { $$ = make_expr_func(FCT_TAN, $3); }
+  |  FCT_SQRT '(' expr ')'        { $$ = make_expr_func(FCT_SQRT, $3); }
+  |  FCT_RANDOM '(' expr ',' expr ')'      { $$ = make_expr_func_rdm( $3, $5); }
+  |  '(' expr ')' { $$ = $2; }
+  |  '-' '(' expr ')' { $$ = make_expr_unop('-', $3); }
  
   /* TODO: add identifier */
 ;
