@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/jeremyperrin/Documents/FAC/3eme_Annee_CMI_Informatique/semestre_6/Analyse_Syntaxique/Projet/Turtle_L3/turtle-ast.h
+stddef.h
+-
+stdbool.h
+-
+
+/Users/jeremyperrin/Documents/FAC/3eme_Annee_CMI_Informatique/semestre_6/Analyse_Syntaxique/Projet/Turtle_L3/turtle.c
+assert.h
+-
+stdlib.h
+-
+time.h
+-
+turtle-ast.h
+/Users/jeremyperrin/Documents/FAC/3eme_Annee_CMI_Informatique/semestre_6/Analyse_Syntaxique/Projet/Turtle_L3/turtle-ast.h
+turtle-lexer.h
+/Users/jeremyperrin/Documents/FAC/3eme_Annee_CMI_Informatique/semestre_6/Analyse_Syntaxique/Projet/Turtle_L3/turtle-lexer.h
+turtle-parser.h
+/Users/jeremyperrin/Documents/FAC/3eme_Annee_CMI_Informatique/semestre_6/Analyse_Syntaxique/Projet/Turtle_L3/turtle-parser.h
+
+turtle-lexer.h
+stdio.h
+-
+string.h
+-
+errno.h
+-
+stdlib.h
+-
+inttypes.h
+-
+unistd.h
+-
+
+turtle-parser.h
+

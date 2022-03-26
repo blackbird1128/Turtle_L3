@@ -180,7 +180,15 @@ struct ast_node *make_expr_func_rdm(struct ast_node *expr1, struct ast_node *exp
 
 
 void ast_destroy(struct ast *self) {
+  ast_destroy_node(self->unit);
+  free(self);
+}
 
+static void ast_destroy_node(struct ast_node *node){
+  for(size_t i = 0; i<node->children_count; i++){
+    ast_destroy_node(node->children[i]);
+    free(node->children[i]);
+  }
 }
 
 /*
@@ -188,7 +196,9 @@ void ast_destroy(struct ast *self) {
  */
 
 void context_create(struct context *self) {
-
+  self->x = self->y = 500;
+  self->angle = 0;
+  self->up = false;
 }
 
 /*
@@ -210,10 +220,10 @@ void ast_eval_node(struct ast_node *node, struct context *ctx) {
     ast_eval_binop(node, ctx);
     break;
   case KIND_EXPR_UNOP:
-    ast_eval_unop(node, ctx);
+ //   ast_eval_unop(node, ctx);
     break;
   case KIND_EXPR_FUNC:
-    ast_eval_func(node, ctx);
+//    ast_eval_func(node, ctx);
     break;
   default:
     break;
@@ -345,6 +355,11 @@ char*  cmd_to_string(enum ast_cmd cmd) {
   }
 }
 
+void print_childrens(struct ast_node *node) {
+  for (int i = 0; i < node->children_count; i++) {
+    ast_print_node(node->children[i]);
+  }
+}
 
 
 void ast_print_node(struct ast_node *node)
@@ -398,11 +413,7 @@ void ast_print_node(struct ast_node *node)
 }
 
 
-void print_childrens(struct ast_node *node) {
-  for (int i = 0; i < node->children_count; i++) {
-    ast_print_node(node->children[i]);
-  }
-}
+
 
 
 
