@@ -66,6 +66,9 @@ void yyerror(struct ast *ret, const char *);
 %token            KW_HOME      "home"
 %token            KW_REPEAT    "repeat"
 %token            KW_SET       "set"
+%token            KW_PROC      "proc"
+%token            KW_CALL      "call"
+
 
 
 
@@ -92,8 +95,7 @@ cmds:
 
 
 name:
-    NAME { $$ = make_name_node($1); }
-;
+    NAME { $$ = make_name_node($1); };
 
 param:
     expr            { $$ = $1; }
@@ -130,6 +132,8 @@ cmd:
   |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($2, $3); } 
   | '{' cmds '}'       { $$ = make_cmd_block($2); }
   | KW_SET name expr  { $$ = make_cmd_set($2, $3); }
+  | KW_PROC name '{' cmds '}'  {$$ = make_cmd_proc($2, $4); }
+  | KW_CALL name       { $$ = make_cmd_call($2); }
 ;
 
 
@@ -143,10 +147,10 @@ expr:
   |  expr '*' expr     { $$ = make_expr_binop('*', $1 , $3); }
   |  expr '/' expr     { $$ = make_expr_binop('/', $1 , $3); }
   |  expr '^' expr     { $$ = make_expr_binop('^', $1 , $3); }
-  |  FCT_SIN '(' expr ')'         { $$ = make_expr_func(FCT_SIN, $3); }
-  |  FCT_COS '(' expr ')'         { $$ = make_expr_func(FCT_COS, $3); }
-  |  FCT_TAN '(' expr ')'         { $$ = make_expr_func(FCT_TAN, $3); }
-  |  FCT_SQRT '(' expr ')'        { $$ = make_expr_func(FCT_SQRT, $3); }
+  |  FCT_SIN '(' expr ')'         { $$ = make_expr_func(FUNC_SIN, $3); }
+  |  FCT_COS '(' expr ')'         { $$ = make_expr_func(FUNC_COS, $3); }
+  |  FCT_TAN '(' expr ')'         { $$ = make_expr_func(FUNC_TAN, $3); }
+  |  FCT_SQRT '(' expr ')'        { $$ = make_expr_func(FUNC_SQRT, $3); }
   |  FCT_RANDOM '(' expr ',' expr ')'      { $$ = make_expr_func_rdm( $3, $5); }
   |  '(' expr ')' { $$ = $2; }
   |  '-' '(' expr ')' { $$ = make_expr_unop('-', $3); }

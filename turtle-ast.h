@@ -45,6 +45,7 @@ enum ast_kind {
   KIND_EXPR_BINOP,
   KIND_EXPR_BLOCK,
   KIND_EXPR_NAME,
+  KIND_EXPR_PROC_NAME,
 };
 
 enum color {
@@ -95,6 +96,8 @@ struct ast_node *make_cmd_home();
 struct ast_node *make_cmd_color(struct ast_node *expr);
 struct ast_node *make_cmd_print(struct ast_node *expr);
 struct ast_node *make_cmd_set(struct ast_node *expr , struct ast_node *value);
+struct ast_node *make_cmd_proc(struct ast_node *name, struct ast_node *block);
+struct ast_node *make_cmd_call(struct ast_node *name);
 
 struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd);
 struct ast_node *make_cmd_block(struct ast_node *cmds);
@@ -109,6 +112,7 @@ struct ast_node *make_color_node(struct ast_node *r, struct ast_node *g, struct 
 struct ast_node *make_color_node_from_name(enum color name);
 
 struct ast_node *make_name_node(char *name);
+struct ast_node *make_proc_name_node(char *name);
 
 
 
@@ -128,7 +132,7 @@ struct ast {
 
 // do not forget to destroy properly! no leaks allowed!
 void ast_destroy(struct ast *self);
-static void ast_destroy_node(struct ast_node *node);
+void ast_destroy_node(struct ast_node *node);
 
 /*
   struct which represent variables in Turtle's language
@@ -153,6 +157,25 @@ void vars_print(struct vars *self);
 void vars_destroy(struct vars *self);
 
 
+// create the procedure dynamic array ( a procedure is an alias to a command or a block of commands)
+
+struct proc {
+  char *name;
+  struct ast_node *cmds;
+};
+
+struct procs {
+  size_t size;
+  size_t capacity;
+  struct proc *data;
+};
+
+struct procs *procs_create();
+struct proc *procs_get(struct procs *self, char *name);
+void procs_set(struct procs *self, char *name, struct ast_node *cmds);
+void procs_print(struct procs *self);
+void procs_destroy(struct procs *self);
+
 // the execution context
 struct context {
   double x;
@@ -161,13 +184,13 @@ struct context {
   bool up;
 
   struct vars *vars;
+  struct procs *procs;
 
-  // TODO: add procedure handling
-  // TODO: add variable handling
 };
 
 // create an initial context
 void context_create(struct context *self);
+void context_destroy(struct context *self);
 
 // print the tree as if it was a Turtle program
 void ast_print(const struct ast *self);
@@ -183,6 +206,8 @@ double ast_eval_node(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_set(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_proc(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_call(struct ast_node *node, struct context *ctx);
 double ast_eval_name(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_block(struct ast_node *node, struct context *ctx);
 double ast_eval_binop(struct ast_node *node, struct context *ctx);
