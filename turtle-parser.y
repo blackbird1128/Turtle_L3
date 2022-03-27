@@ -76,7 +76,7 @@ void yyerror(struct ast *ret, const char *);
 %left UNARY_MINUS
 
 
-%type <node> unit cmds cmd expr param
+%type <node> unit cmds cmd expr param color
 
 %%
 
@@ -94,6 +94,18 @@ param:
   |  cmd             { $$ = $1; }
 ;
 
+color:
+    RED   { $$ = make_color_node_from_name(COLOR_RED); }
+  | BLUE  { $$ = make_color_node_from_name(COLOR_BLUE); }
+  | GREEN { $$ = make_color_node_from_name(COLOR_GREEN); }
+  | CYAN  { $$ = make_color_node_from_name(COLOR_CYAN); }
+  | MAGENTA  { $$ = make_color_node_from_name(COLOR_MAGENTA); }
+  | YELLOW  { $$ = make_color_node_from_name(COLOR_YELLOW); }
+  | BLACK { $$ = make_color_node_from_name(COLOR_BLACK); }
+  | GREY { $$ = make_color_node_from_name(COLOR_GREY); }
+  | WHITE { $$ = make_color_node_from_name(COLOR_WHITE); }
+  | expr expr expr    {  $$ = make_color_node($1, $2, $3); }
+
 
 cmd:
      KW_FORWARD param   { $$ = make_cmd_forward($2); }
@@ -104,7 +116,7 @@ cmd:
   |  KW_HEADING param   { $$ = make_cmd_heading($2); }
   |  KW_UP param        { $$ = make_cmd_up($2); }
   |  KW_DOWN param      { $$ = make_cmd_down($2); }
-  |  KW_COLOR param     { $$ = make_cmd_color($2); }
+  |  KW_COLOR color    { $$ = make_cmd_color($2); }
   |  KW_POSITION param param { $$ = make_cmd_position($2, $3); }
   |  KW_HOME      { $$ = make_cmd_home(); }
   |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($2, $3); } 
@@ -112,17 +124,7 @@ cmd:
 ;
 
 
-color:
-    RED   { }
-  | GREEN { }
-  | BLUE  { }
-  | CYAN  { }
-  | MAGENTA  { }
-  | YELLOW  { }
-  | BLACK { }
-  | GREY { }
-  | WHITE { }
-  | expr expr expr    {  }
+
 
 
 expr:

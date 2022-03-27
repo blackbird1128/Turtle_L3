@@ -177,6 +177,82 @@ struct ast_node *make_expr_func_rdm(struct ast_node *expr1, struct ast_node *exp
   return node;
 }
 
+struct ast_node *make_color_node(struct ast_node *r, struct ast_node *g, struct ast_node *b)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_COLOR;
+  node->children_count = 3;
+  node->children[0] = r;
+  node->children[1] = g;
+  node->children[2] = b;
+  return node;
+}
+
+
+struct ast_node *make_color_node_from_name(enum color col)
+{
+  struct ast_node *node_r = calloc(1, sizeof(struct ast_node));
+  node_r->kind = KIND_EXPR_VALUE;
+  node_r->children_count = 0;
+
+  struct ast_node *node_g = calloc(1, sizeof(struct ast_node));
+  node_g->kind = KIND_EXPR_VALUE;
+  node_g->children_count = 0;
+
+
+  struct ast_node *node_b = calloc(1, sizeof(struct ast_node));
+  node_b->kind = KIND_EXPR_VALUE;
+  node_b->children_count = 0;
+
+  switch (col)
+  {
+  case COLOR_BLACK:
+    node_r->u.value = 0;
+    node_g->u.value = 0;
+    node_b->u.value = 0;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_WHITE:
+    node_r->u.value = 1;
+    node_g->u.value = 1;
+    node_b->u.value = 1;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_RED:
+    node_r->u.value = 1;
+    node_g->u.value = 0;
+    node_b->u.value = 0;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_GREEN:
+    node_r->u.value = 0;
+    node_g->u.value = 1;
+    node_b->u.value = 0;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_BLUE:
+    node_r->u.value = 0;
+    node_g->u.value = 0;
+    node_b->u.value = 1;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_YELLOW:
+    node_r->u.value = 1;
+    node_g->u.value = 1;
+    node_b->u.value = 0;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_CYAN:
+    node_r->u.value = 0;
+    node_g->u.value = 1;
+    node_b->u.value = 1;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_MAGENTA:
+    node_r->u.value = 1;
+    node_g->u.value = 0;
+    node_b->u.value = 1;
+    return make_color_node(node_r, node_g, node_b);
+  case COLOR_GREY:
+    node_r->u.value = 0.5;
+    node_g->u.value = 0.5;
+    node_b->u.value = 0.5;
+    return make_color_node(node_r, node_g, node_b);
+  }
+}
 
 
 void ast_destroy(struct ast *self) {
@@ -238,36 +314,47 @@ void get_move_command(double x, double y,  struct context *ctx)
 {
   if(ctx->up)
   {
-    printf("MoveTo %f %f\n", x, y);
+    printf("MoveTo %f %f\n", y, x);
   }
   else
   {
-    printf("LineTo %f %f\n", ctx->x, ctx->y);
+    printf("LineTo %f %f\n", y, x);
   }
 }
 
+
+double get_random_value(double min, double max)
+{
+  return min + (double)rand() / ((double)RAND_MAX / (max - min));
+}
+
+
 double ast_eval_node(struct ast_node *node, struct context *ctx) {
+  double result = 0;
   switch (node->kind) {
   case KIND_CMD_SIMPLE:
-    return ast_eval_cmd_simple(node, ctx);
+    result = ast_eval_cmd_simple(node, ctx);
     break;
   case KIND_CMD_REPEAT:
-    return ast_eval_cmd_repeat(node, ctx);
+    result = ast_eval_cmd_repeat(node, ctx);
     break;
   case KIND_CMD_BLOCK:
-    return ast_eval_cmd_block(node, ctx);
+    result =  ast_eval_cmd_block(node, ctx);
     break;
   case KIND_EXPR_BINOP:
-    return ast_eval_binop(node, ctx);
+    result =  ast_eval_binop(node, ctx);
     break;
   case KIND_EXPR_UNOP:
-    return ast_eval_unop(node, ctx);
+    result = ast_eval_unop(node, ctx);
     break;
   case KIND_EXPR_FUNC:
-    return ast_eval_func(node, ctx);
+    result = ast_eval_func(node, ctx);
     break;
   case KIND_EXPR_VALUE:
-    return node->u.value;
+    result =  node->u.value;
+    break;
+  case KIND_COLOR:
+    printf("Color %f %f %f\n", ast_eval_node(node->children[0], ctx), ast_eval_node(node->children[1], ctx), ast_eval_node(node->children[2], ctx));
     break;
   default:
     break;
@@ -275,6 +362,7 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
   if(node->next != NULL) {
     ast_eval_node(node->next, ctx);
   }
+  return result;
 
 
 }
@@ -321,12 +409,12 @@ double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
     return NAN;
     break;
   case CMD_POSITION:
-    ctx->x = node->children[0]->u.value;
-    ctx->y = node->children[1]->u.value;
+    ctx->x = ast_eval_node(node->children[0], ctx);
+    ctx->y = ast_eval_node(node->children[1], ctx);
     return NAN;
     break;
   case CMD_COLOR:
-    return NAN;
+    ast_eval_node(node->children[0], ctx);
     break;
   case CMD_PRINT: // we already displayed the message
     return NAN;
@@ -368,9 +456,9 @@ double ast_eval_binop(struct ast_node *node, struct context *ctx) {
 double ast_eval_unop(struct ast_node *node, struct context *ctx) {
   switch (node->u.op) {
   case '-':
-    return -node->children[0]->u.value;
+    return -ast_eval_node(node->children[0], ctx);
   case '+':
-    return node->children[0]->u.value;
+    return +ast_eval_node(node->children[0], ctx);
     break;
   }
 }
@@ -378,7 +466,7 @@ double ast_eval_unop(struct ast_node *node, struct context *ctx) {
 double ast_eval_func(struct ast_node *node, struct context *ctx) {
   switch (node->u.func) {
   case FUNC_RANDOM:
-    node->u.value = 0;
+    return  get_random_value( ast_eval_node(node->children[0], ctx), ast_eval_node(node->children[1], ctx));
     break;
   case FUNC_COS:
     return cos(deg_to_rad(ast_eval_node(node->children[0], ctx)));
@@ -475,7 +563,18 @@ void ast_print_node(struct ast_node *node)
   switch (node->kind) {
     
     case KIND_CMD_SIMPLE:
-      printf("%s ", cmd_to_string(node->u.cmd));
+      if (node->u.cmd == CMD_COLOR)
+      {
+        printf("color (");
+        ast_print_node(node->children[0]);
+        printf(")\n");
+        break;
+      }
+      else
+      {
+        printf("%s\n", cmd_to_string(node->u.cmd));
+      }
+
       print_childrens(node);
       break;
     case KIND_CMD_REPEAT:
@@ -509,7 +608,10 @@ void ast_print_node(struct ast_node *node)
       print_childrens(node);
       printf("}");
       break;
-    default:
+    case KIND_COLOR:
+      ast_print_node(node->children[0]);
+      ast_print_node(node->children[1]);
+      ast_print_node(node->children[2]);
       break;
   }
   printf("\n");

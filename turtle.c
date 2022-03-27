@@ -55,9 +55,10 @@ int main() {
   printf("X: %f\nY: %f\n", ctx.x, ctx.y);
   printf("UP ? %d\n", ctx.up);
   printf("Angle: %f\n", ctx.angle);
+  printf("\n\n");
 
   ast_eval(&root, &ctx);
-  ast_print(&root);
+  //ast_print(&root);
 
  // ast_destroy(&root);
 

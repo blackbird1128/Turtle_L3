@@ -37,12 +37,26 @@ enum ast_kind {
   KIND_CMD_CALL,
   KIND_CMD_SET,
 
+  KIND_COLOR,
+
   KIND_EXPR_FUNC,
   KIND_EXPR_VALUE,
   KIND_EXPR_UNOP,
   KIND_EXPR_BINOP,
   KIND_EXPR_BLOCK,
   KIND_EXPR_NAME,
+};
+
+enum color {
+  COLOR_BLACK,
+  COLOR_WHITE,
+  COLOR_RED,
+  COLOR_GREEN,
+  COLOR_BLUE,
+  COLOR_YELLOW,
+  COLOR_CYAN,
+  COLOR_MAGENTA,
+  COLOR_GREY,
 };
 
 #define AST_CHILDREN_MAX 3
@@ -90,7 +104,8 @@ struct ast_node *make_expr_unop(char op, struct ast_node *expr);
 struct ast_node *make_expr_func(enum ast_func func, struct ast_node *expr);
 struct ast_node *make_expr_func_rdm(struct ast_node *expr1 , struct ast_node *expr2);
 
-struct ast_node *make_color_node(double r, double g, double b);
+struct ast_node *make_color_node(struct ast_node *r, struct ast_node *g, struct ast_node *b);
+struct ast_node *make_color_node_from_name(enum color name);
 
 
 
@@ -152,7 +167,7 @@ void get_color_command(struct ast_node *node, struct context *ctx);
 
 
 void move(double distance, struct context *ctx);
-void get_random_value(double min, double max);
+double get_random_value(double min, double max);
 
 
 #endif /* TURTLE_AST_H */
