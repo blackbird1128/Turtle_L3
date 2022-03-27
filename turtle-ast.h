@@ -132,7 +132,7 @@ struct ast {
 
 // do not forget to destroy properly! no leaks allowed!
 void ast_destroy(struct ast *self);
-static void ast_destroy_node(struct ast_node *node);
+void ast_destroy_node(struct ast_node *node);
 
 struct var {
   char *name;
@@ -183,12 +183,11 @@ struct context {
   struct vars *vars;
   struct procs *procs;
 
-  // TODO: add procedure handling
-  // TODO: add variable handling
 };
 
 // create an initial context
 void context_create(struct context *self);
+void context_destroy(struct context *self);
 
 // print the tree as if it was a Turtle program
 void ast_print(const struct ast *self);

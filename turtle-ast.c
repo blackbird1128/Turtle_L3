@@ -400,7 +400,13 @@ struct ast_node *make_color_node_from_name(enum color col)
     node_g->u.value = 0.5;
     node_b->u.value = 0.5;
     return make_color_node(node_r, node_g, node_b);
+  default:
+    printf("Unknown color\n");
+    exit(-1);
   }
+
+
+  return NULL; // Remove warning
 }
 
 
@@ -409,7 +415,7 @@ void ast_destroy(struct ast *self) {
   free(self);
 }
 
-static void ast_destroy_node(struct ast_node *node){
+void ast_destroy_node(struct ast_node *node){
   for(size_t i = 0; i<node->children_count; i++){
     ast_destroy_node(node->children[i]);
     free(node->children[i]);
@@ -426,8 +432,18 @@ void context_create(struct context *self) {
   self->up = false;
 
   self->vars = calloc(1, sizeof(struct vars));
+  vars_set(self->vars,"PI", 3.14159265358979323846);
+  vars_set(self->vars, "SQRT2", 1.41421356237309504880);
+  vars_set(self->vars, "SQRT3", 1.73205080756887729353);
   self->procs = calloc(1, sizeof(struct procs));
 }
+
+void context_destroy(struct context *self) {
+  vars_destroy(self->vars);
+  procs_destroy(self->procs);
+  free(self);
+}
+
 
 /*
  * eval
@@ -601,6 +617,7 @@ double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
     return NAN;
     break;
   }
+  return NAN;
 }
 
 double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
@@ -608,6 +625,7 @@ double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
   for (i = 0; i < node->children[0]->u.value; i++) {
     ast_eval_node(node->children[1], ctx);
   }
+  return NAN;
 }
 
 double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
@@ -615,6 +633,7 @@ double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
   for (i = 0; i < node->children_count; i++) {
     ast_eval_node(node->children[i], ctx);
   }
+  return NAN;
 }
 
 double ast_eval_cmd_call(struct ast_node *node, struct context *ctx) {
@@ -649,7 +668,11 @@ double ast_eval_binop(struct ast_node *node, struct context *ctx) {
   case '/':
     return ast_eval_node(node->children[0], ctx) / ast_eval_node(node->children[1], ctx);
     break;
+  default:
+    printf("Unknown operator %c\n", node->u.op);
+    exit(-1);
   }
+  return NAN;
 }
 
 double ast_eval_unop(struct ast_node *node, struct context *ctx) {
@@ -659,46 +682,51 @@ double ast_eval_unop(struct ast_node *node, struct context *ctx) {
   case '+':
     return +ast_eval_node(node->children[0], ctx);
     break;
+  default:
+    printf("Unknown unary operator %c\n", node->u.op);
+    exit(-1);
   }
+  return NAN; // Remove warning
 }
 
 double ast_eval_func(struct ast_node *node, struct context *ctx) {
+  double result = NAN;
   switch (node->u.func) {
-  case FUNC_RANDOM:
+  case FUNC_RANDOM:;
+
     double min = ast_eval_node(node->children[0], ctx);
     double max = ast_eval_node(node->children[1], ctx);
-
     if(min > max){
       printf("Error: min > max for random\n");
       exit(-1);
     }
-    return  get_random_value( min, max);
+    result = get_random_value(min, max);
     break;
   case FUNC_COS:
-    return cos(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    result = cos(deg_to_rad(ast_eval_node(node->children[0], ctx)));
     break;
   case FUNC_SIN:
-    return sin(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    result = sin(deg_to_rad(ast_eval_node(node->children[0], ctx)));
     break;
   case FUNC_TAN:
-    return  tan(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    result =   tan(deg_to_rad(ast_eval_node(node->children[0], ctx)));
     break;
-  case FUNC_SQRT:
+  case FUNC_SQRT:;
     double x = ast_eval_node(node->children[0], ctx);
     if(x < 0) {
       printf("Error: sqrt of negative number\n");
       exit(-1);
     }
-    return  sqrt(x);
+    result = sqrt(x);
     break;  
   }
+  return result;
 }
 
 
 
 void ast_eval(const struct ast *self, struct context *ctx) {
   ast_eval_node(self->unit, ctx);
-
 }
 
 /*
@@ -839,6 +867,10 @@ void ast_print_node(struct ast_node *node)
       ast_print_node(node->children[0]);
       ast_print_node(node->children[1]);
       ast_print_node(node->children[2]);
+      break;
+    default:
+      printf("unknown or unused node\n");
+      exit(-1);
       break;
   }
   printf("\n");

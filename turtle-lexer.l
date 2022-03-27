@@ -16,12 +16,20 @@ INT {DIGIT}+
 DOUBLE {INT}*(("."|e-|e+|E|e){DIGIT}+)?
 LEFT_BRACKET "{"
 RIGHT_BRACKET "}"
+LEFT_PARENTHESIS "("
+RIGHT_PARENTHESIS ")"
+COMMA ","
+VAR [A-Z][A-Z0-9]*
 
 
 %%
 
 {INT}+                { yylval.value = strtod(yytext, NULL); return VALUE; }
 {DOUBLE}              { yylval.value = strtod(yytext, NULL); return VALUE; }
+{VAR}                 { yylval.name = yytext; return NAME; }
+
+
+
 "print"               {return CMD_PRINT;}
 "up"                  {return KW_UP;}
 "down"                {return KW_DOWN;}
@@ -59,6 +67,9 @@ RIGHT_BRACKET "}"
 "color"               {return KW_COLOR;}
 "home"                {return KW_HOME;}
 "repeat"              {return KW_REPEAT;}
+"set"                 {return KW_SET;}
+"proc"                {return KW_PROC;}
+"call"                {return KW_CALL;}
 
 "+"                  {return '+';}
 "-"                  {return '-';}
@@ -69,6 +80,9 @@ RIGHT_BRACKET "}"
 
 {LEFT_BRACKET}                  {return '{';}
 {RIGHT_BRACKET}                 {return '}';}
+{LEFT_PARENTHESIS}              {return '(';}
+{RIGHT_PARENTHESIS}             {return ')';}
+{COMMA}                          {return ',';}
 
 
 

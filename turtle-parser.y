@@ -147,10 +147,10 @@ expr:
   |  expr '*' expr     { $$ = make_expr_binop('*', $1 , $3); }
   |  expr '/' expr     { $$ = make_expr_binop('/', $1 , $3); }
   |  expr '^' expr     { $$ = make_expr_binop('^', $1 , $3); }
-  |  FCT_SIN '(' expr ')'         { $$ = make_expr_func(FCT_SIN, $3); }
-  |  FCT_COS '(' expr ')'         { $$ = make_expr_func(FCT_COS, $3); }
-  |  FCT_TAN '(' expr ')'         { $$ = make_expr_func(FCT_TAN, $3); }
-  |  FCT_SQRT '(' expr ')'        { $$ = make_expr_func(FCT_SQRT, $3); }
+  |  FCT_SIN '(' expr ')'         { $$ = make_expr_func(FUNC_SIN, $3); }
+  |  FCT_COS '(' expr ')'         { $$ = make_expr_func(FUNC_COS, $3); }
+  |  FCT_TAN '(' expr ')'         { $$ = make_expr_func(FUNC_TAN, $3); }
+  |  FCT_SQRT '(' expr ')'        { $$ = make_expr_func(FUNC_SQRT, $3); }
   |  FCT_RANDOM '(' expr ',' expr ')'      { $$ = make_expr_func_rdm( $3, $5); }
   |  '(' expr ')' { $$ = $2; }
   |  '-' '(' expr ')' { $$ = make_expr_unop('-', $3); }
