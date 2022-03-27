@@ -130,9 +130,12 @@ struct ast {
 void ast_destroy(struct ast *self);
 static void ast_destroy_node(struct ast_node *node);
 
+/*
+  struct which represent variables in Turtle's language
+*/
 struct var {
-  char *name;
-  double value;
+  char *name; //name of the variable
+  double value; //variable's value
 };
 
 // Dynamic array of variables
@@ -173,8 +176,9 @@ void ast_print(const struct ast *self);
 // evaluate the tree and generate some basic primitives
 void ast_eval(const struct ast *self, struct context *ctx);
 
+/*
 
-
+*/
 double ast_eval_node(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
@@ -186,8 +190,9 @@ double ast_eval_unop(struct ast_node *node, struct context *ctx);
 double ast_eval_func(struct ast_node *node, struct context *ctx);
 
 
-
-
+/*
+  procedures 
+*/
 double deg_to_rad(double angle);
 void set_angle(enum ast_cmd cmd ,double angle, struct context *ctx); // used for left, right and heading
 

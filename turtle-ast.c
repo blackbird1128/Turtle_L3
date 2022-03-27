@@ -9,6 +9,12 @@
 
 #define PI 3.141592653589793
 
+
+/*
+  Implementation of procedures that create nodes
+  --> Return an ast_node value considereing its parameters
+*/
+
 struct ast_node *make_expr_value(double value) {
   struct ast_node *node = calloc(1, sizeof(struct ast_node));
   node->kind = KIND_EXPR_VALUE;
@@ -152,6 +158,10 @@ struct ast_node *make_cmd_set(struct ast_node *expr, struct ast_node *value){
 
 /* Vars : */
 
+/*
+  Constructs an array of struct var
+  Returns a struct vars variable
+*/
 struct vars *vars_create()
 {
   struct vars *vars = calloc(1, sizeof(struct vars));
@@ -161,6 +171,10 @@ struct vars *vars_create()
   return vars;
 }
 
+/*
+  Get a variable in a struct vars variable considering its name
+  If it is not present --> returns NULL
+*/
 struct var *vars_get(struct vars *self, char *name)
 {
   for (int i = 0; i < self->size; i++) {
@@ -171,6 +185,10 @@ struct var *vars_get(struct vars *self, char *name)
   return NULL;
 }
 
+/*
+  Set a value in a struct vars variable considering its name
+  If it is not present --> does nothing
+*/
 void vars_set(struct vars *self, char *name, double value)
 {
   struct var *var = vars_get(self, name);
@@ -185,6 +203,9 @@ void vars_set(struct vars *self, char *name, double value)
   var->value = value;
 }
 
+/*
+  Print a struct vars variable
+*/
 void vars_print(struct vars *self)
 {
   for (int i = 0; i < self->size; i++) {
@@ -192,6 +213,9 @@ void vars_print(struct vars *self)
   }
 }
 
+/*
+  Destroy a struct vars variable
+*/
 void vars_destroy(struct vars *self)
 {
   for (int i = 0; i < self->size; i++) {
@@ -204,6 +228,10 @@ void vars_destroy(struct vars *self)
 /* Parser : */
 
 
+/*
+  Implementation of  procedures that create nodes
+  --> Return an ast_node value considering its parameters
+*/
 
 struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node *right)
 {
@@ -258,7 +286,11 @@ struct ast_node *make_color_node(struct ast_node *r, struct ast_node *g, struct 
   return node;
 }
 
-
+/*
+  Create a struct ast_node which handles color node creation by name
+  -step 1 : create many node for each properties of the color (RGB) 
+  -step 2 : calls make_color_node procedure to return a color node with the corresponding RGB values
+*/
 struct ast_node *make_color_node_from_name(enum color col)
 {
   struct ast_node *node_r = calloc(1, sizeof(struct ast_node));
@@ -324,23 +356,27 @@ struct ast_node *make_color_node_from_name(enum color col)
   }
 }
 
-
+/*
+  Destroy the abstract syntax tree
+*/
 void ast_destroy(struct ast *self) {
   ast_destroy_node(self->unit);
-  free(self);
 }
 
 static void ast_destroy_node(struct ast_node *node){
+  if(node==NULL){
+    return;
+  }
   for(size_t i = 0; i<node->children_count; i++){
     ast_destroy_node(node->children[i]);
     free(node->children[i]);
   }
+  ast_destroy_node(node->next);
 }
 
 /*
- * context
+ * Creates a context and sets its default values
  */
-
 void context_create(struct context *self) {
   self->x = self->y = 0;
   self->angle = 0;
@@ -349,12 +385,10 @@ void context_create(struct context *self) {
   self->vars = calloc(1, sizeof(struct vars));
 }
 
+
 /*
- * eval
- */
-
-
-
+  Sets the angle which will make the pen with the context
+*/
 void set_angle(enum ast_cmd cmd, double angle , struct context *ctx) {
   double new_angle = ctx->angle;
   switch (cmd) {
@@ -373,15 +407,25 @@ void set_angle(enum ast_cmd cmd, double angle , struct context *ctx) {
   }
 } 
 
+/*
+  Convert degree value into radian and returns its value
+*/
 double deg_to_rad(double angle) {
   return angle * PI / 180.0;
 }
+
+/*
+  To do
+*/
 void move(double dist, struct context *ctx) {
   double angle = ctx->angle;
   ctx->x -= dist * cos(deg_to_rad(angle));
   ctx->y -= dist * sin(deg_to_rad(angle));
 }
 
+/*
+  Print the actions of the pen (MoveTo or LineTo)
+*/
 void get_move_command(double x, double y,  struct context *ctx)
 {
   if(ctx->up)
@@ -394,13 +438,18 @@ void get_move_command(double x, double y,  struct context *ctx)
   }
 }
 
-
+/*
+  Draw a random value between min and max (both included)
+*/
 double get_random_value(double min, double max)
 {
   return min + (double)rand() / ((double)RAND_MAX / (max - min));
 }
 
-
+/*
+  The procedure works as the following : 
+  -Like ast_print_node, it will check the kind of the node and calls the proper procedure to evaluate the asociated nodes
+*/
 double ast_eval_node(struct ast_node *node, struct context *ctx) {
   double result = 0;
   switch (node->kind) {
@@ -441,11 +490,12 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
     ast_eval_node(node->next, ctx);
   }
   return result;
-
-
 }
 
-
+/*
+  Evaluate the name of a variable
+  If the variable doesn't exists prints an appropriate message
+*/
 double ast_eval_name(struct ast_node *node, struct context *ctx) {
   struct var* v =  vars_get(ctx->vars, node->u.name);
   if(v == NULL) {
@@ -455,12 +505,18 @@ double ast_eval_name(struct ast_node *node, struct context *ctx) {
   return v->value;
 }
 
+
+/*
+  Evaluates command sets (handles procs)
+*/
 double ast_eval_cmd_set(struct ast_node *node, struct context *ctx) {
   vars_set(ctx->vars, node->children[0]->u.name, ast_eval_node(node->children[1], ctx));
   return NAN;
 }
 
-
+/*
+  Evaluates simple commands
+*/
 double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
   switch (node->u.cmd) {
   case CMD_FORWARD:
@@ -516,6 +572,9 @@ double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
   }
 }
 
+/*
+  Evaluates repeat loops
+*/
 double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
   int i;
   for (i = 0; i < node->children[0]->u.value; i++) {
@@ -523,6 +582,9 @@ double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
   }
 }
 
+/*
+  Evaluates repeat blocks
+*/
 double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
   int i;
   for (i = 0; i < node->children_count; i++) {
@@ -530,6 +592,9 @@ double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
   }
 }
 
+/*
+  Evaluates expression with a binary operator (+,-,*,/)
+*/
 double ast_eval_binop(struct ast_node *node, struct context *ctx) {
   switch (node->u.op) {
   case '+':
@@ -547,6 +612,9 @@ double ast_eval_binop(struct ast_node *node, struct context *ctx) {
   }
 }
 
+/*
+  Evaluates expression with a unary operator (+,-)
+*/
 double ast_eval_unop(struct ast_node *node, struct context *ctx) {
   switch (node->u.op) {
   case '-':
@@ -557,6 +625,9 @@ double ast_eval_unop(struct ast_node *node, struct context *ctx) {
   }
 }
 
+/*
+  Evaluates functions
+*/
 double ast_eval_func(struct ast_node *node, struct context *ctx) {
   switch (node->u.func) {
   case FUNC_RANDOM:
@@ -578,23 +649,18 @@ double ast_eval_func(struct ast_node *node, struct context *ctx) {
 }
 
 
-
 void ast_eval(const struct ast *self, struct context *ctx) {
   ast_eval_node(self->unit, ctx);
-
 }
 
 /*
- * print
- */
-
-
-
+  Get the name of functions
+  Return the conventional name of functions into a string
+*/
 char* func_to_string(enum ast_func func)
 {
   switch(func)
   {
-
     case FUNC_SIN:
       return "sin";
     case FUNC_COS:
@@ -608,11 +674,13 @@ char* func_to_string(enum ast_func func)
     default:
       return "unknown function";
   }
-
 }
 
 
-
+/*
+  Get the name of commands
+  Return the conventional name of commands into a string 
+*/
 char*  cmd_to_string(enum ast_cmd cmd) {
   switch (cmd) {
     case CMD_FORWARD:
@@ -642,13 +710,18 @@ char*  cmd_to_string(enum ast_cmd cmd) {
   }
 }
 
+/*
+  Prints the children of a node
+*/
 void print_childrens(struct ast_node *node) {
-  for (int i = 0; i < node->children_count; i++) {
+  for(int i = 0; i < node->children_count; i++) {
     ast_print_node(node->children[i]);
   }
 }
 
-
+/*
+  Print a node according to its kind
+*/
 void ast_print_node(struct ast_node *node)
 {
   if (node == NULL) {
@@ -720,12 +793,6 @@ void ast_print_node(struct ast_node *node)
 }
 
 
-
-
-
-
-
 void ast_print(const struct ast *self) {
-    ast_print_node(self->unit);
-  }
-
+  ast_print_node(self->unit);
+}

@@ -9,6 +9,16 @@
 
 %}
 
+
+/*
+    -- Convention used in the lexer --
+    
+    -We use the subject prefix KW for each command ex : a KW_FORWARD token is returned when forward is parsed
+    -FCT prefix is used for the different commands ex : FCT_RANDOM, FCT_TAN
+    -No prefix are used for the color, a token with the same name but written with capital letters is returned ex : "red" --> "RED" is returned
+*/
+
+
 %option warn 8bit nodefault noyywrap
 
 DIGIT [0-9]
