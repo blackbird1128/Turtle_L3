@@ -113,21 +113,21 @@ cmd:
 
 
 color:
-    RED
-  | GREEN
-  | BLUE
-  | CYAN
-  | MAGENTA
-  | YELLOW
-  | BLACK
-  | GREY
-  | WHITE
-  | expr expr expr    { /* TODO */ }
+    RED   { }
+  | GREEN { }
+  | BLUE  { }
+  | CYAN  { }
+  | MAGENTA  { }
+  | YELLOW  { }
+  | BLACK { }
+  | GREY { }
+  | WHITE { }
+  | expr expr expr    {  }
 
 
 expr:
     VALUE             { $$ = make_expr_value($1); }
-  |  '-' VALUE %prec UNARY_MINUS { /* TODO */ }
+  |  '-' VALUE %prec UNARY_MINUS { $$= make_expr_value(-1*$2); }
   |  expr '+' expr     { $$ = make_expr_binop('+', $1 , $3); }
   |  expr '-' expr     { $$ = make_expr_binop('-', $1 , $3); }
   |  expr '*' expr     { $$ = make_expr_binop('*', $1 , $3); }

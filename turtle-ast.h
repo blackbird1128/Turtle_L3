@@ -90,6 +90,8 @@ struct ast_node *make_expr_unop(char op, struct ast_node *expr);
 struct ast_node *make_expr_func(enum ast_func func, struct ast_node *expr);
 struct ast_node *make_expr_func_rdm(struct ast_node *expr1 , struct ast_node *expr2);
 
+struct ast_node *make_color_node(double r, double g, double b);
+
 
 
 
@@ -133,13 +135,24 @@ void ast_eval(const struct ast *self, struct context *ctx);
 
 
 
-void ast_eval_node(struct ast_node *node, struct context *ctx);
-void ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
-void ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
-void ast_eval_cmd_block(struct ast_node *node, struct context *ctx);
-void ast_eval_binop(struct ast_node *node, struct context *ctx);
-void ast_eval_unop(struct ast_node *node, struct context *ctx);
-void ast_eval_func(struct ast_node *node, struct context *ctx);
+double ast_eval_node(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_block(struct ast_node *node, struct context *ctx);
+double ast_eval_binop(struct ast_node *node, struct context *ctx);
+double ast_eval_unop(struct ast_node *node, struct context *ctx);
+double ast_eval_func(struct ast_node *node, struct context *ctx);
+
+
+double deg_to_rad(double angle);
+void set_angle(enum ast_cmd cmd ,double angle, struct context *ctx); // used for left, right and heading
+
+void get_move_command(double x, double y,  struct context *ctx); // print LineTo Or MoveTo depending on the up state
+void get_color_command(struct ast_node *node, struct context *ctx);
+
+
+void move(double distance, struct context *ctx);
+void get_random_value(double min, double max);
 
 
 #endif /* TURTLE_AST_H */

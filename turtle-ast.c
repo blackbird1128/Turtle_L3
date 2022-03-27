@@ -196,7 +196,7 @@ static void ast_destroy_node(struct ast_node *node){
  */
 
 void context_create(struct context *self) {
-  self->x = self->y = 500;
+  self->x = self->y = 0;
   self->angle = 0;
   self->up = false;
 }
@@ -205,95 +205,200 @@ void context_create(struct context *self) {
  * eval
  */
 
-void ast_eval_node(struct ast_node *node, struct context *ctx) {
+
+
+void set_angle(enum ast_cmd cmd, double angle , struct context *ctx) {
+  double new_angle = ctx->angle;
+  switch (cmd) {
+    case CMD_LEFT:
+      new_angle =  fmod( new_angle + angle  , 360.0);
+      break;
+    case CMD_RIGHT:
+      new_angle = fmod( new_angle - angle  , 360.0);
+      if(new_angle < 0) {
+        new_angle += 360;
+      }
+      ctx->angle += angle;
+      break;
+    default:
+      break;
+  }
+} 
+
+double deg_to_rad(double angle) {
+  return angle * PI / 180.0;
+}
+void move(double dist, struct context *ctx) {
+  double angle = ctx->angle;
+  ctx->x -= dist * cos(deg_to_rad(angle));
+  ctx->y -= dist * sin(deg_to_rad(angle));
+}
+
+void get_move_command(double x, double y,  struct context *ctx)
+{
+  if(ctx->up)
+  {
+    printf("MoveTo %f %f\n", x, y);
+  }
+  else
+  {
+    printf("LineTo %f %f\n", ctx->x, ctx->y);
+  }
+}
+
+double ast_eval_node(struct ast_node *node, struct context *ctx) {
   switch (node->kind) {
   case KIND_CMD_SIMPLE:
-    ast_eval_cmd_simple(node, ctx);
+    return ast_eval_cmd_simple(node, ctx);
     break;
   case KIND_CMD_REPEAT:
-    ast_eval_cmd_repeat(node, ctx);
+    return ast_eval_cmd_repeat(node, ctx);
     break;
   case KIND_CMD_BLOCK:
-    ast_eval_cmd_block(node, ctx);
+    return ast_eval_cmd_block(node, ctx);
     break;
   case KIND_EXPR_BINOP:
-    ast_eval_binop(node, ctx);
+    return ast_eval_binop(node, ctx);
     break;
   case KIND_EXPR_UNOP:
- //   ast_eval_unop(node, ctx);
+    return ast_eval_unop(node, ctx);
     break;
   case KIND_EXPR_FUNC:
-//    ast_eval_func(node, ctx);
+    return ast_eval_func(node, ctx);
+    break;
+  case KIND_EXPR_VALUE:
+    return node->u.value;
     break;
   default:
     break;
   }
+  if(node->next != NULL) {
+    ast_eval_node(node->next, ctx);
+  }
+
+
 }
 
-void ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
+double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
   switch (node->u.cmd) {
+  case CMD_FORWARD:
+
+    move(ast_eval_node(node->children[0], ctx), ctx);
+    get_move_command(ctx->x, ctx->y, ctx);
+    return NAN;
+     // y axis is inverted
+    break;
+  case CMD_BACKWARD:
+    move(-ast_eval_node(node->children[0], ctx), ctx);
+    get_move_command(ctx->x, ctx->y, ctx);
+    return NAN;
+    break;
   case CMD_UP:
+    ctx->up = true;
+    return NAN;
     break;
   case CMD_DOWN:
-
+    ctx->up = false;
+    return NAN;
     break;
   case CMD_LEFT:
-
+    set_angle(node->u.cmd, ast_eval_node(node->children[0], ctx), ctx);
+    return NAN;
     break;
   case CMD_RIGHT:
+    set_angle(node->u.cmd, ast_eval_node(node->children[0], ctx), ctx);
+    return NAN;
     break;
   case CMD_HOME:
     ctx->x = 0;
     ctx->y = 0;
+    printf("MoveTo 0.0, 0.0\n");
+    return NAN;
     break;
+
   case CMD_HEADING:
+    ctx->angle = node->children[0]->u.value;
+    return NAN;
     break;
   case CMD_POSITION:
     ctx->x = node->children[0]->u.value;
     ctx->y = node->children[1]->u.value;
+    return NAN;
     break;
   case CMD_COLOR:
+    return NAN;
     break;
-  case CMD_PRINT:
+  case CMD_PRINT: // we already displayed the message
+    return NAN;
     break;
   }
 }
 
-void ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
+double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx) {
   int i;
   for (i = 0; i < node->children[0]->u.value; i++) {
     ast_eval_node(node->children[1], ctx);
   }
 }
 
-void ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
+double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
   int i;
   for (i = 0; i < node->children_count; i++) {
     ast_eval_node(node->children[i], ctx);
   }
 }
 
-void ast_eval_binop(struct ast_node *node, struct context *ctx) {
+double ast_eval_binop(struct ast_node *node, struct context *ctx) {
   switch (node->u.op) {
   case '+':
-    node->u.value = node->children[0]->u.value + node->children[1]->u.value;
+    return ast_eval_node(node->children[0], ctx) + ast_eval_node(node->children[1], ctx);
     break;
   case '-':
-    node->u.value = node->children[0]->u.value - node->children[1]->u.value;
+    return ast_eval_node(node->children[0], ctx) - ast_eval_node(node->children[1], ctx);
     break;
   case '*':
-    node->u.value = node->children[0]->u.value * node->children[1]->u.value;
+    return ast_eval_node(node->children[0], ctx) * ast_eval_node(node->children[1], ctx);
     break;
   case '/':
-    node->u.value = node->children[0]->u.value / node->children[1]->u.value;
+    return ast_eval_node(node->children[0], ctx) / ast_eval_node(node->children[1], ctx);
     break;
+  }
+}
+
+double ast_eval_unop(struct ast_node *node, struct context *ctx) {
+  switch (node->u.op) {
+  case '-':
+    return -node->children[0]->u.value;
+  case '+':
+    return node->children[0]->u.value;
+    break;
+  }
+}
+
+double ast_eval_func(struct ast_node *node, struct context *ctx) {
+  switch (node->u.func) {
+  case FUNC_RANDOM:
+    node->u.value = 0;
+    break;
+  case FUNC_COS:
+    return cos(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    break;
+  case FUNC_SIN:
+    return sin(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    break;
+  case FUNC_TAN:
+    return  tan(deg_to_rad(ast_eval_node(node->children[0], ctx)));
+    break;
+  case FUNC_SQRT:
+    return  sqrt(ast_eval_node(node->children[0], ctx));
+    break;  
   }
 }
 
 
 
 void ast_eval(const struct ast *self, struct context *ctx) {
-
+  ast_eval_node(self->unit, ctx);
 
 }
 

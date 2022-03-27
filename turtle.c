@@ -51,11 +51,15 @@ int main() {
 
   struct context ctx;
   context_create(&ctx);
+  printf("Context: ");
+  printf("X: %f\nY: %f\n", ctx.x, ctx.y);
+  printf("UP ? %d\n", ctx.up);
+  printf("Angle: %f\n", ctx.angle);
 
   ast_eval(&root, &ctx);
   ast_print(&root);
 
-  ast_destroy(&root);
+ // ast_destroy(&root);
 
   return ret;
 }
