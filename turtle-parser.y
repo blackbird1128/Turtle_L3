@@ -65,6 +65,7 @@ void yyerror(struct ast *ret, const char *);
 %token            KW_COLOR     "color"
 %token            KW_HOME      "home"
 %token            KW_REPEAT    "repeat"
+%token            KW_SET       "set"
 
 
 
@@ -76,7 +77,7 @@ void yyerror(struct ast *ret, const char *);
 %left UNARY_MINUS
 
 
-%type <node> unit cmds cmd expr param color
+%type <node> unit cmds cmd expr param color name
 
 %%
 
@@ -89,8 +90,14 @@ cmds:
   | /* empty */       { $$ = NULL; }
 ;
 
+
+name:
+    NAME { $$ = make_name_node($1); }
+;
+
 param:
     expr            { $$ = $1; }
+  |  name      { $$ = $1; }  
   |  cmd             { $$ = $1; }
 ;
 
@@ -107,6 +114,7 @@ color:
   | expr expr expr    {  $$ = make_color_node($1, $2, $3); }
 
 
+
 cmd:
      KW_FORWARD param   { $$ = make_cmd_forward($2); }
   |  KW_BACKWARD param  { $$ = make_cmd_backward($2); }
@@ -121,14 +129,14 @@ cmd:
   |  KW_HOME      { $$ = make_cmd_home(); }
   |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($2, $3); } 
   | '{' cmds '}'       { $$ = make_cmd_block($2); }
+  | KW_SET name expr  { $$ = make_cmd_set($2, $3); }
 ;
-
-
 
 
 
 expr:
     VALUE             { $$ = make_expr_value($1); }
+  | name             { $$ =  $1 ;} 
   |  '-' VALUE %prec UNARY_MINUS { $$= make_expr_value(-1*$2); }
   |  expr '+' expr     { $$ = make_expr_binop('+', $1 , $3); }
   |  expr '-' expr     { $$ = make_expr_binop('-', $1 , $3); }

@@ -58,7 +58,7 @@ int main() {
   printf("\n\n");
 
   ast_eval(&root, &ctx);
-  //ast_print(&root);
+  ast_print(&root);
 
  // ast_destroy(&root);
 

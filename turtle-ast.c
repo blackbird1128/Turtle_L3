@@ -134,6 +134,76 @@ struct ast_node *make_cmd_block(struct ast_node *cmds){
   return node;
 }
 
+struct ast_node *make_name_node(char *name) {
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_EXPR_NAME;
+  node->u.name = strcpy(calloc(strlen(name) + 1, sizeof(char)), name);
+  return node;
+}
+
+struct ast_node *make_cmd_set(struct ast_node *expr, struct ast_node *value){
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_CMD_SET;
+  node->children_count = 2;
+  node->children[0] = expr;
+  node->children[1] = value;
+  return node;
+}
+
+/* Vars : */
+
+struct vars *vars_create()
+{
+  struct vars *vars = calloc(1, sizeof(struct vars));
+  vars->data = calloc(10, sizeof(struct var));
+  vars->size = 0;
+  vars->capacity = 10;
+  return vars;
+}
+
+struct var *vars_get(struct vars *self, char *name)
+{
+  for (int i = 0; i < self->size; i++) {
+    if (strcmp(self->data[i].name, name) == 0) {
+      return &self->data[i];
+    }
+  }
+  return NULL;
+}
+
+void vars_set(struct vars *self, char *name, double value)
+{
+  struct var *var = vars_get(self, name);
+  if (var == NULL) {
+    if (self->size == self->capacity) {
+      self->capacity *= 2;
+      self->data = realloc(self->data, self->capacity * sizeof(struct var));
+    }
+    var = &self->data[self->size++];
+    var->name = name;
+  }
+  var->value = value;
+}
+
+void vars_print(struct vars *self)
+{
+  for (int i = 0; i < self->size; i++) {
+    printf("%s = %f\n", self->data[i].name, self->data[i].value);
+  }
+}
+
+void vars_destroy(struct vars *self)
+{
+  for (int i = 0; i < self->size; i++) {
+    free(self->data[i].name);
+  }
+  free(self->data);
+  free(self);
+}
+
+/* Parser : */
+
+
 
 struct ast_node *make_expr_binop(char op, struct ast_node *left, struct ast_node *right)
 {
@@ -275,6 +345,8 @@ void context_create(struct context *self) {
   self->x = self->y = 0;
   self->angle = 0;
   self->up = false;
+
+  self->vars = calloc(1, sizeof(struct vars));
 }
 
 /*
@@ -338,6 +410,9 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
   case KIND_CMD_REPEAT:
     result = ast_eval_cmd_repeat(node, ctx);
     break;
+  case KIND_CMD_SET:
+    result = ast_eval_cmd_set(node, ctx); // define ast_eval_cmd_set
+    break;
   case KIND_CMD_BLOCK:
     result =  ast_eval_cmd_block(node, ctx);
     break;
@@ -353,6 +428,9 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
   case KIND_EXPR_VALUE:
     result =  node->u.value;
     break;
+  case KIND_EXPR_NAME:
+    result = ast_eval_name(node, ctx); // DEFINE ast_eval_name
+    break;
   case KIND_COLOR:
     printf("Color %f %f %f\n", ast_eval_node(node->children[0], ctx), ast_eval_node(node->children[1], ctx), ast_eval_node(node->children[2], ctx));
     break;
@@ -366,6 +444,22 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
 
 
 }
+
+
+double ast_eval_name(struct ast_node *node, struct context *ctx) {
+  struct var* v =  vars_get(ctx->vars, node->u.name);
+  if(v == NULL) {
+    printf("Undefined variable %s\n", node->u.name);
+    exit(-1);
+  }
+  return v->value;
+}
+
+double ast_eval_cmd_set(struct ast_node *node, struct context *ctx) {
+  vars_set(ctx->vars, node->children[0]->u.name, ast_eval_node(node->children[1], ctx));
+  return NAN;
+}
+
 
 double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx) {
   switch (node->u.cmd) {
@@ -579,6 +673,12 @@ void ast_print_node(struct ast_node *node)
       break;
     case KIND_CMD_REPEAT:
       printf("repeat ");
+      ast_print_node(node->children[0]);
+      printf(" ");
+      ast_print_node(node->children[1]);
+      break;
+    case KIND_CMD_SET:
+      printf("set ");
       ast_print_node(node->children[0]);
       printf(" ");
       ast_print_node(node->children[1]);

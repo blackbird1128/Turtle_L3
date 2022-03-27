@@ -94,6 +94,7 @@ struct ast_node *make_cmd_position(struct ast_node *expr, struct ast_node *expr2
 struct ast_node *make_cmd_home();
 struct ast_node *make_cmd_color(struct ast_node *expr);
 struct ast_node *make_cmd_print(struct ast_node *expr);
+struct ast_node *make_cmd_set(struct ast_node *expr , struct ast_node *value);
 
 struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd);
 struct ast_node *make_cmd_block(struct ast_node *cmds);
@@ -106,6 +107,8 @@ struct ast_node *make_expr_func_rdm(struct ast_node *expr1 , struct ast_node *ex
 
 struct ast_node *make_color_node(struct ast_node *r, struct ast_node *g, struct ast_node *b);
 struct ast_node *make_color_node_from_name(enum color name);
+
+struct ast_node *make_name_node(char *name);
 
 
 
@@ -127,12 +130,34 @@ struct ast {
 void ast_destroy(struct ast *self);
 static void ast_destroy_node(struct ast_node *node);
 
+struct var {
+  char *name;
+  double value;
+};
+
+// Dynamic array of variables
+struct vars {
+  size_t size;
+  size_t capacity;
+  struct var *data;
+};
+
+// create the dynamic array of variables
+struct vars *vars_create();
+struct var *vars_get(struct vars *self, char *name);
+void vars_set(struct vars *self, char *name, double value);
+void vars_print(struct vars *self);
+void vars_destroy(struct vars *self);
+
+
 // the execution context
 struct context {
   double x;
   double y;
   double angle;
   bool up;
+
+  struct vars *vars;
 
   // TODO: add procedure handling
   // TODO: add variable handling
@@ -153,10 +178,14 @@ void ast_eval(const struct ast *self, struct context *ctx);
 double ast_eval_node(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_simple(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_repeat(struct ast_node *node, struct context *ctx);
+double ast_eval_cmd_set(struct ast_node *node, struct context *ctx);
+double ast_eval_name(struct ast_node *node, struct context *ctx);
 double ast_eval_cmd_block(struct ast_node *node, struct context *ctx);
 double ast_eval_binop(struct ast_node *node, struct context *ctx);
 double ast_eval_unop(struct ast_node *node, struct context *ctx);
 double ast_eval_func(struct ast_node *node, struct context *ctx);
+
+
 
 
 double deg_to_rad(double angle);
