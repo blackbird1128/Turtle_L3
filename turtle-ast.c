@@ -126,6 +126,26 @@ struct ast_node *make_cmd_repeat(struct ast_node *expr, struct ast_node *cmd){
   return node;
 }
 
+struct ast_node *make_cmd_proc(struct ast_node *name, struct ast_node *block)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_CMD_PROC;
+  node->children_count = 2;
+  node->children[0] = name;
+  node->children[1] = block;
+  return node;
+}
+
+struct ast_node *make_cmd_call(struct ast_node *name)
+{
+  struct ast_node *node = calloc(1, sizeof(struct ast_node));
+  node->kind = KIND_CMD_CALL;
+  node->children_count = 1;
+  node->children[0] = name;
+  return node;
+}
+
+
 struct ast_node *make_cmd_block(struct ast_node *cmds){
   struct ast_node *node = calloc(1, sizeof(struct ast_node));
   node->kind = KIND_CMD_BLOCK;
@@ -140,6 +160,8 @@ struct ast_node *make_name_node(char *name) {
   node->u.name = strcpy(calloc(strlen(name) + 1, sizeof(char)), name);
   return node;
 }
+
+
 
 struct ast_node *make_cmd_set(struct ast_node *expr, struct ast_node *value){
   struct ast_node *node = calloc(1, sizeof(struct ast_node));
@@ -200,6 +222,63 @@ void vars_destroy(struct vars *self)
   free(self->data);
   free(self);
 }
+
+/* Procs : */
+
+
+struct procs *procs_create()
+{
+  struct procs *procs = calloc(1, sizeof(struct procs));
+  procs->data = calloc(10, sizeof(struct proc));
+  procs->size = 0;
+  procs->capacity = 10;
+  return procs;
+}
+
+struct proc *procs_get(struct procs *self, char *name)
+{
+  for (int i = 0; i < self->size; i++) {
+    if (strcmp(self->data[i].name, name) == 0) {
+      return &self->data[i];
+    }
+  }
+  return NULL;
+}
+
+void procs_set(struct procs *self, char *name, struct ast_node *cmds)
+{
+  struct proc *proc = procs_get(self, name);
+  if (proc == NULL) {
+    if (self->size == self->capacity) {
+      self->capacity *= 2;
+      self->data = realloc(self->data, self->capacity * sizeof(struct proc));
+    }
+    proc = &self->data[self->size++];
+    proc->name = name;
+  }
+  proc->cmds = cmds;
+
+}
+
+void procs_print(struct procs *self)
+{
+  for (int i = 0; i < self->size; i++) {
+    printf("%s:\n", self->data[i].name);
+    ast_print_node(self->data[i].cmds);
+  }
+}
+
+void procs_destroy(struct procs *self)
+{
+  for (int i = 0; i < self->size; i++) {
+    ast_destroy_node(self->data[i].cmds);
+  }
+  free(self->data);
+  free(self);
+}
+
+
+
 
 /* Parser : */
 
@@ -347,6 +426,7 @@ void context_create(struct context *self) {
   self->up = false;
 
   self->vars = calloc(1, sizeof(struct vars));
+  self->procs = calloc(1, sizeof(struct procs));
 }
 
 /*
@@ -413,6 +493,12 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
   case KIND_CMD_SET:
     result = ast_eval_cmd_set(node, ctx); // define ast_eval_cmd_set
     break;
+  case KIND_CMD_CALL:
+    result = ast_eval_cmd_call(node, ctx);
+    break;
+  case KIND_CMD_PROC:
+    result = ast_eval_cmd_proc(node, ctx);
+    break;
   case KIND_CMD_BLOCK:
     result =  ast_eval_cmd_block(node, ctx);
     break;
@@ -440,6 +526,7 @@ double ast_eval_node(struct ast_node *node, struct context *ctx) {
   if(node->next != NULL) {
     ast_eval_node(node->next, ctx);
   }
+
   return result;
 
 
@@ -530,6 +617,24 @@ double ast_eval_cmd_block(struct ast_node *node, struct context *ctx) {
   }
 }
 
+double ast_eval_cmd_call(struct ast_node *node, struct context *ctx) {
+  struct proc *proc =  procs_get(ctx->procs, node->children[0]->u.name);
+  if(proc == NULL) {
+    printf("Undefined procedure %s\n", node->children[0]->u.name);
+    exit(-1);
+  }
+  return ast_eval_node(proc->cmds, ctx);
+}
+
+double ast_eval_cmd_proc(struct ast_node *node, struct context *ctx) {
+  if(procs_get(ctx->procs, node->children[0]->u.name) != NULL) {
+    printf("Procedure %s already defined\n", node->children[0]->u.name);
+    exit(-1);
+  }
+  procs_set(ctx->procs, node->children[0]->u.name, node->children[1]);
+  return NAN;
+}
+
 double ast_eval_binop(struct ast_node *node, struct context *ctx) {
   switch (node->u.op) {
   case '+':
@@ -560,7 +665,14 @@ double ast_eval_unop(struct ast_node *node, struct context *ctx) {
 double ast_eval_func(struct ast_node *node, struct context *ctx) {
   switch (node->u.func) {
   case FUNC_RANDOM:
-    return  get_random_value( ast_eval_node(node->children[0], ctx), ast_eval_node(node->children[1], ctx));
+    double min = ast_eval_node(node->children[0], ctx);
+    double max = ast_eval_node(node->children[1], ctx);
+
+    if(min > max){
+      printf("Error: min > max for random\n");
+      exit(-1);
+    }
+    return  get_random_value( min, max);
     break;
   case FUNC_COS:
     return cos(deg_to_rad(ast_eval_node(node->children[0], ctx)));
@@ -572,7 +684,12 @@ double ast_eval_func(struct ast_node *node, struct context *ctx) {
     return  tan(deg_to_rad(ast_eval_node(node->children[0], ctx)));
     break;
   case FUNC_SQRT:
-    return  sqrt(ast_eval_node(node->children[0], ctx));
+    double x = ast_eval_node(node->children[0], ctx);
+    if(x < 0) {
+      printf("Error: sqrt of negative number\n");
+      exit(-1);
+    }
+    return  sqrt(x);
     break;  
   }
 }
@@ -682,6 +799,16 @@ void ast_print_node(struct ast_node *node)
       ast_print_node(node->children[0]);
       printf(" ");
       ast_print_node(node->children[1]);
+      break;
+    case KIND_CMD_PROC:
+      printf("proc ");
+      ast_print_node(node->children[0]);
+      printf(" ");
+      ast_print_node(node->children[1]);
+      break;
+    case KIND_CMD_CALL:
+      printf("call ");
+      ast_print_node(node->children[0]);
       break;
     case KIND_EXPR_BINOP:
       ast_print_node(node->children[0]);

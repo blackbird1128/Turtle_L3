@@ -66,6 +66,9 @@ void yyerror(struct ast *ret, const char *);
 %token            KW_HOME      "home"
 %token            KW_REPEAT    "repeat"
 %token            KW_SET       "set"
+%token            KW_PROC      "proc"
+%token            KW_CALL      "call"
+
 
 
 
@@ -92,8 +95,7 @@ cmds:
 
 
 name:
-    NAME { $$ = make_name_node($1); }
-;
+    NAME { $$ = make_name_node($1); };
 
 param:
     expr            { $$ = $1; }
@@ -130,6 +132,8 @@ cmd:
   |  KW_REPEAT param cmd  { $$ = make_cmd_repeat($2, $3); } 
   | '{' cmds '}'       { $$ = make_cmd_block($2); }
   | KW_SET name expr  { $$ = make_cmd_set($2, $3); }
+  | KW_PROC name '{' cmds '}'  {$$ = make_cmd_proc($2, $4); }
+  | KW_CALL name       { $$ = make_cmd_call($2); }
 ;
 
 

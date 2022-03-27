@@ -58,6 +58,7 @@ int main() {
   printf("\n\n");
 
   ast_eval(&root, &ctx);
+  printf("Start of print\n\n");
   ast_print(&root);
 
  // ast_destroy(&root);
